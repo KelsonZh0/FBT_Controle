@@ -7,15 +7,36 @@ import { Button, ErrorState, Loading } from '@/components/ui';
 import type { RootStackParamList } from '@/navigation';
 import type { ApiError, ProductSummary } from '@/types/api';
 import { useProducts } from '@/hooks/useProducts';
+import { useSession } from '@/session/session';
+import { colors } from '@/theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Products'>;
 
 export function ProductsScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
   const { data, isLoading, isError, error, refetch, isFetching } = useProducts({ search });
+  const { isAuthenticated, customer, logout } = useSession();
 
   return (
     <View style={styles.container}>
+      <View style={styles.accountBar}>
+        {isAuthenticated ? (
+          <>
+            <Text style={styles.accountText}>Olá, {customer?.name}</Text>
+            <Text style={styles.accountAction} onPress={logout}>
+              Sair
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.accountText}>Você não está logado</Text>
+            <Text style={styles.accountAction} onPress={() => navigation.navigate('Login')}>
+              Entrar / Cadastrar
+            </Text>
+          </>
+        )}
+      </View>
+
       <View style={styles.header}>
         <TextInput
           style={styles.search}
@@ -69,6 +90,17 @@ export function ProductsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  accountBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    backgroundColor: colors.grayLight,
+    paddingBottom: 8,
+  },
+  accountText: { fontSize: 13, color: colors.gray },
+  accountAction: { fontSize: 13, fontWeight: '700', color: colors.primary },
   header: { flexDirection: 'row', gap: 8, padding: 12, alignItems: 'center' },
   search: {
     flex: 1,

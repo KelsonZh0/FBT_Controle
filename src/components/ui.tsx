@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors } from '@/theme/colors';
 
 export function Center({ children }: { children: React.ReactNode }) {
   return <View style={styles.center}>{children}</View>;
@@ -53,17 +54,17 @@ export function Button({
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
-  muted: { color: '#6b7280', textAlign: 'center' },
+  muted: { color: colors.gray, textAlign: 'center' },
   errorTitle: { fontSize: 16, fontWeight: '700', color: '#b91c1c' },
   btn: {
-    backgroundColor: '#111827',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 10,
     alignItems: 'center',
   },
-  btnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#d1d5db' },
+  btnGhost: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary },
   btnDim: { opacity: 0.55 },
-  btnText: { color: '#fff', fontWeight: '700' },
-  btnTextGhost: { color: '#111827' },
+  btnText: { color: colors.white, fontWeight: '700' },
+  btnTextGhost: { color: colors.primary },
 });
