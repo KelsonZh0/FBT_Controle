@@ -6,7 +6,12 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return data;
 }
 
-export async function register(name: string, email: string, password: string): Promise<AuthResponse> {
-  const { data } = await http.post<AuthResponse>('/auth/register', { name, email, password });
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+  document?: string,
+): Promise<AuthResponse> {
+  const { data } = await http.post<AuthResponse>('/auth/register', { name, email, password, document });
   return data;
 }
