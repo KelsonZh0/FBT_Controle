@@ -1,15 +1,20 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useOrders } from '@/hooks/useOrders';
 import { useSession } from '@/session/session';
 import { money } from '@/lib/format';
 import { statusColor, statusLabel } from '@/lib/orderStatus';
 import { Button, ErrorState, Loading } from '@/components/ui';
-import type { RootStackParamList } from '@/navigation';
+import type { RootStackParamList, TabParamList } from '@/navigation';
 import type { ApiError } from '@/types/api';
 import { colors } from '@/theme/colors';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Orders'>;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Orders'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 export function OrdersScreen({ navigation }: Props) {
   const { isAuthenticated } = useSession();
@@ -35,7 +40,7 @@ export function OrdersScreen({ navigation }: Props) {
       <View style={styles.center}>
         <Text style={styles.emoji}>🧾</Text>
         <Text style={styles.title}>Você ainda não tem pedidos</Text>
-        <Button label="Ver produtos" onPress={() => navigation.navigate('Products')} />
+        <Button label="Ver produtos" onPress={() => navigation.navigate('Home')} />
       </View>
     );
   }

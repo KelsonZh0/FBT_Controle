@@ -43,7 +43,7 @@ export function CartScreen({ navigation }: Props) {
         <Text style={styles.emoji}>🛒</Text>
         <Text style={styles.title}>Seu carrinho está vazio</Text>
         <Text style={styles.body}>Olá, {customer?.name}. Adicione produtos para vê-los aqui.</Text>
-        <Button label="Ver produtos" onPress={() => navigation.navigate('Products')} />
+        <Button label="Ver produtos" onPress={() => navigation.navigate('Tabs', { screen: 'Home' })} />
       </View>
     );
   }

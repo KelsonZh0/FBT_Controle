@@ -24,7 +24,7 @@ export function CheckoutScreen({ navigation }: Props) {
       <View style={styles.center}>
         <Text style={styles.title}>Seu carrinho está vazio</Text>
         <Text style={styles.body}>Adicione produtos antes de finalizar o pedido.</Text>
-        <Button label="Ver produtos" onPress={() => navigation.navigate('Products')} />
+        <Button label="Ver produtos" onPress={() => navigation.navigate('Tabs', { screen: 'Home' })} />
       </View>
     );
   }

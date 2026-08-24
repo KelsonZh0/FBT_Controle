@@ -15,4 +15,10 @@ export const queryKeys = {
     detail: (id: string) => ['orders', 'detail', id] as const,
     timeline: (id: string) => ['orders', 'timeline', id] as const,
   },
+  brands: {
+    all: ['brands'] as const,
+  },
+  categories: {
+    all: ['categories'] as const,
+  },
 };

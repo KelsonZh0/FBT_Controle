@@ -4,6 +4,7 @@ import type { Paginated, Product, ProductSummary } from '@/types/api';
 export interface ListProductsParams {
   search?: string;
   categoryId?: string;
+  brandId?: string;
   page?: number;
   pageSize?: number;
 }
