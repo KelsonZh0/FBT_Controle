@@ -97,3 +97,43 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
+
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'BOLETO';
+
+export type PaymentSimulate = 'approve' | 'decline';
+
+// PENDING -> PAID ou PENDING -> CANCELLED (fluxo do comprador).
+// FULFILLED/SHIPPED/DELIVERED são avanços feitos pela loja após o pagamento.
+export type OrderStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'FULFILLED' | 'SHIPPED' | 'DELIVERED';
+
+export interface OrderItem {
+  variantId: string;
+  productName: string;
+  variantName: string | null;
+  sku: string;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface Payment {
+  status: string;
+  method: PaymentMethod;
+  amount: number;
+  transactionId: string;
+}
+
+export interface Order {
+  id: string;
+  status: OrderStatus;
+  total: number;
+  items: OrderItem[];
+  payment: Payment | null;
+  createdAt: string;
+}
+
+export interface OrderTimelineEntry {
+  status: OrderStatus;
+  createdAt: string;
+  note?: string | null;
+}

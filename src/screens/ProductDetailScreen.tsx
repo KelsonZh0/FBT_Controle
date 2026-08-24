@@ -1,34 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { getProduct } from '@/services/products';
+import { useProduct } from '@/hooks/useProduct';
+import { useCartMutations } from '@/hooks/useCartMutations';
+import { useSession } from '@/session/session';
 import { money } from '@/lib/format';
 import { Button, ErrorState, Loading } from '@/components/ui';
 import type { RootStackParamList } from '@/navigation';
-import type { ApiError, Product, ProductVariant } from '@/types/api';
+import type { ApiError, ProductVariant } from '@/types/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetail'>;
 
-export function ProductDetailScreen({ route }: Props) {
+export function ProductDetailScreen({ route, navigation }: Props) {
   const { id } = route.params;
+  const { data: product, isLoading, isError, error, refetch } = useProduct(id);
+  const { isAuthenticated } = useSession();
+  const { addItem } = useCartMutations();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
   const [variantId, setVariantId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let vivo = true;
-    setLoading(true);
-    setErro(null);
-    getProduct(id)
-      .then((p) => vivo && setProduct(p))
-      .catch((e: ApiError) => vivo && setErro(e.message))
-      .finally(() => vivo && setLoading(false));
-    return () => {
-      vivo = false;
-    };
-  }, [id]);
 
   const selected: ProductVariant | undefined = useMemo(() => {
     if (!product) return undefined;
@@ -39,14 +28,25 @@ export function ProductDetailScreen({ route }: Props) {
     );
   }, [product, variantId]);
 
-  if (loading) {
-    return <Loading label="Carregando produto…" />;
-  }
-  if (erro || !product) {
-    return <ErrorState message={erro ?? 'Falha'} />;
+  if (isLoading) return <Loading label="Carregando produto…" />;
+  if (isError || !product) {
+    return <ErrorState message={(error as ApiError)?.message ?? 'Falha'} onRetry={() => refetch()} />;
   }
 
   const outOfStock = !selected || selected.stock <= 0;
+
+  function handleAdd() {
+    if (!product || !selected) return;
+    addItem.mutate(
+      {
+        variantId: selected.id,
+        quantity: 1,
+        name: selected.label ? `${product.name} (${selected.label})` : product.name,
+        unitPrice: selected.price,
+      },
+      { onSuccess: () => navigation.navigate('Cart') },
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -55,6 +55,7 @@ export function ProductDetailScreen({ route }: Props) {
       {selected && <Text style={styles.price}>{money(selected.price)}</Text>}
       {product.description && <Text style={styles.desc}>{product.description}</Text>}
 
+      {/* Produto VARIABLE: deixa escolher a variante. SIMPLE já usa a única. */}
       {product.type === 'VARIABLE' && (
         <View style={styles.variants}>
           <Text style={styles.label}>Opções</Text>
@@ -77,12 +78,14 @@ export function ProductDetailScreen({ route }: Props) {
 
       <Text style={styles.stock}>{outOfStock ? 'Sem estoque' : `${selected?.stock} em estoque`}</Text>
 
-      {/* TODO Semana 2 (Bloco 3): trocar este Alert pela mutation otimista
-          addItem.mutate({ variantId, quantity: 1, name, unitPrice }). */}
+      {!isAuthenticated && (
+        <Text style={styles.loginHint}>Você precisa estar logado para comprar (veja a tela do carrinho).</Text>
+      )}
+
       <Button
-        label="Adicionar ao carrinho"
-        onPress={() => Alert.alert('Semana 2', 'Ligar o carrinho: useCartMutations + login (Blocos 2 e 3).')}
-        disabled={outOfStock}
+        label={addItem.isPending ? 'Adicionando…' : 'Adicionar ao carrinho'}
+        onPress={handleAdd}
+        disabled={outOfStock || !isAuthenticated || addItem.isPending}
       />
     </ScrollView>
   );
@@ -109,4 +112,5 @@ const styles = StyleSheet.create({
   chipActive: { borderColor: '#111827', backgroundColor: '#111827', color: '#fff' },
   chipDisabled: { opacity: 0.4 },
   stock: { fontSize: 13, color: '#6b7280' },
+  loginHint: { fontSize: 13, color: '#b45309' },
 });

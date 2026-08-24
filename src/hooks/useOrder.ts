@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { getCart } from '@/services/cart';
+import { getOrder } from '@/services/orders';
 import { queryKeys } from '@/lib/queryKeys';
 import { useSession } from '@/session/session';
 
-export function useCart() {
+export function useOrder(id: string) {
   const { isAuthenticated } = useSession();
   return useQuery({
-    queryKey: queryKeys.cart.all,
-    queryFn: getCart,
-    enabled: isAuthenticated,
+    queryKey: queryKeys.orders.detail(id),
+    queryFn: () => getOrder(id),
+    enabled: isAuthenticated && Boolean(id),
   });
 }
