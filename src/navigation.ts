@@ -15,4 +15,6 @@ export type RootStackParamList = {
   OrderDetail: { id: string };
   Login: undefined;
   Cadastro: undefined;
+  ForgotPassword: { email?: string } | undefined;
+  ResetPassword: { email: string };
 };

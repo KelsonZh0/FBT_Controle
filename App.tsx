@@ -16,6 +16,8 @@ import { CheckoutScreen } from '@/screens/CheckoutScreen';
 import { OrderDetailScreen } from '@/screens/OrderDetailScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { CadastroScreen } from '@/screens/CadastroScreen';
+import { ForgotPasswordScreen } from '@/screens/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '@/screens/ResetPasswordScreen';
 import { CartHeaderButton } from '@/components/CartHeaderButton';
 import type { RootStackParamList, TabParamList } from '@/navigation';
 import { queryClient } from '@/lib/queryClient';
@@ -98,6 +100,16 @@ export default function App() {
               <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: 'Pedido' }} />
               <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Entrar' }} />
               <Stack.Screen name="Cadastro" component={CadastroScreen} options={{ title: 'Criar conta' }} />
+              <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPasswordScreen}
+                options={{ title: 'Esqueci minha senha' }}
+              />
+              <Stack.Screen
+                name="ResetPassword"
+                component={ResetPasswordScreen}
+                options={{ title: 'Nova senha' }}
+              />
             </Stack.Navigator>
           </NavigationContainer>
           <StatusBar style="light" />
