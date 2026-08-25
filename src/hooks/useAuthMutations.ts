@@ -1,5 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
-import { login as loginRequest, register as registerRequest } from '@/services/auth';
+import {
+  login as loginRequest,
+  register as registerRequest,
+  resetPassword as resetPasswordRequest,
+  validateRecoveryEmail as validateRecoveryEmailRequest,
+} from '@/services/auth';
 import { useSession } from '@/session/session';
 
 interface LoginInput {
@@ -12,6 +17,11 @@ interface RegisterInput {
   email: string;
   password: string;
   document?: string;
+}
+
+interface ResetPasswordInput {
+  email: string;
+  newPassword: string;
 }
 
 export function useLogin() {
@@ -30,5 +40,18 @@ export function useRegister() {
     mutationFn: ({ name, email, password, document }: RegisterInput) =>
       registerRequest(name, email, password, document),
     onSuccess: (auth) => login(auth),
+  });
+}
+
+export function useValidateRecoveryEmail() {
+  return useMutation({
+    mutationFn: (email: string) => validateRecoveryEmailRequest(email),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: ({ email, newPassword }: ResetPasswordInput) =>
+      resetPasswordRequest(email, newPassword),
   });
 }
