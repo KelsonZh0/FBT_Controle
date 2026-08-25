@@ -17,6 +17,10 @@ export function LoginScreen({ navigation }: Props) {
 
   const canSubmit = email.trim().length > 0 && password.length > 0;
 
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword', { email: email.trim() || undefined });
+  };
+
   const handleSubmit = () => {
     mutate(
       { email: email.trim(), password },
@@ -69,6 +73,12 @@ export function LoginScreen({ navigation }: Props) {
           label={isPending ? 'Entrando…' : 'Entrar'}
           onPress={handleSubmit}
           disabled={isPending || !canSubmit}
+        />
+
+        <Button
+          label="Esqueci minha senha"
+          onPress={handleForgotPassword}
+          variant="ghost"
         />
 
         <Text style={styles.link} onPress={() => navigation.navigate('Cadastro')}>
