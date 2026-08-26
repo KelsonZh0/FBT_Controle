@@ -12,7 +12,7 @@ import { colors } from '@/theme/colors';
 type Props = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 
 export function CartScreen({ navigation }: Props) {
-  const { isAuthenticated, customer, logout, isLoading: isSessionLoading } = useSession();
+  const { isAuthenticated, customer, isLoading: isSessionLoading } = useSession();
   const { data: cart, isLoading, isError, error, refetch } = useCart();
   const { setQuantity, removeItem } = useCartMutations();
 
@@ -105,9 +105,6 @@ export function CartScreen({ navigation }: Props) {
           </View>
         }
       />
-      <View style={styles.signout}>
-        <Button label="Sair" variant="ghost" onPress={logout} />
-      </View>
     </View>
   );
 }
@@ -139,5 +136,4 @@ const styles = StyleSheet.create({
   dim: { opacity: 0.4 },
   footer: { marginTop: 16, gap: 10 },
   total: { fontSize: 18, fontWeight: '800', color: colors.black, textAlign: 'right' },
-  signout: { padding: 12 },
 });

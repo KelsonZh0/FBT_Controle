@@ -1,5 +1,16 @@
-import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -13,6 +24,8 @@ import { useBrands } from '@/hooks/useBrands';
 import { useQuickAddToCart } from '@/hooks/useQuickAddToCart';
 import { colors } from '@/theme/colors';
 
+const PAGE_SIZE = 6;
+
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Home'>,
   NativeStackScreenProps<RootStackParamList>
@@ -22,14 +35,35 @@ export function ProductsScreen({ navigation, route }: Props) {
   const [search, setSearch] = useState('');
   const [brandId, setBrandId] = useState<string | undefined>(undefined);
   const [categoryId, setCategoryId] = useState<string | undefined>(route.params?.categoryId);
+  const [page, setPage] = useState(1);
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    if (route.params?.categoryId) setCategoryId(route.params.categoryId);
+    if (route.params?.categoryId) {
+      setCategoryId(route.params.categoryId);
+      setPage(1);
+    }
   }, [route.params?.categoryId]);
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useProducts({ search, brandId, categoryId });
+  const { data, isLoading, isError, error, refetch, isFetching } = useProducts({
+    search: search.trim() || undefined,
+    brandId,
+    categoryId,
+    page,
+    pageSize: PAGE_SIZE,
+  });
+
   const { data: brands } = useBrands();
   const quickAdd = useQuickAddToCart();
+
+  const products: ProductSummary[] = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+      ? (data as unknown as ProductSummary[])
+      : [];
+
+  const total = data?.total ?? products.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function handleAdd(item: ProductSummary) {
     if (item.type === 'VARIABLE') {
@@ -37,6 +71,11 @@ export function ProductsScreen({ navigation, route }: Props) {
       return;
     }
     quickAdd.mutate(item);
+  }
+
+  function handlePageChange(newPage: number) {
+    setPage(newPage);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   }
 
   return (
@@ -49,9 +88,23 @@ export function ProductsScreen({ navigation, route }: Props) {
             placeholder="Pesquisar controles remotos…"
             placeholderTextColor={colors.gray}
             value={search}
-            onChangeText={setSearch}
+            onChangeText={(text) => {
+              setSearch(text);
+              setPage(1);
+            }}
             autoCorrect={false}
           />
+          {search.length > 0 && (
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={colors.gray}
+              onPress={() => {
+                setSearch('');
+                setPage(1);
+              }}
+            />
+          )}
         </View>
       </View>
 
@@ -63,7 +116,10 @@ export function ProductsScreen({ navigation, route }: Props) {
         >
           <Text
             style={[styles.chip, !brandId && styles.chipActive]}
-            onPress={() => setBrandId(undefined)}
+            onPress={() => {
+              setBrandId(undefined);
+              setPage(1);
+            }}
           >
             Todas
           </Text>
@@ -71,7 +127,10 @@ export function ProductsScreen({ navigation, route }: Props) {
             <Text
               key={b.id}
               style={[styles.chip, brandId === b.id && styles.chipActive]}
-              onPress={() => setBrandId(b.id === brandId ? undefined : b.id)}
+              onPress={() => {
+                setBrandId(b.id === brandId ? undefined : b.id);
+                setPage(1);
+              }}
             >
               {b.name}
             </Text>
@@ -85,13 +144,63 @@ export function ProductsScreen({ navigation, route }: Props) {
         <ErrorState message={(error as ApiError).message} onRetry={() => refetch()} />
       ) : (
         <FlatList
-          data={data}
+          ref={flatListRef}
+          data={products}
           keyExtractor={(p) => p.id}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={isFetching && !isLoading} onRefresh={() => refetch()} />}
           ListEmptyComponent={<Text style={styles.empty}>Nenhum produto encontrado.</Text>}
+          ListFooterComponent={
+            products.length > 0 && totalPages > 1 ? (
+              <View style={styles.pagination}>
+                <Pressable
+                  style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
+                  disabled={page <= 1 || isFetching}
+                  onPress={() => handlePageChange(page - 1)}
+                >
+                  <Ionicons
+                    name="chevron-back"
+                    size={16}
+                    color={page <= 1 ? colors.gray : colors.primary}
+                  />
+                  <Text style={[styles.pageBtnText, page <= 1 && styles.pageBtnTextDisabled]}>
+                    Anterior
+                  </Text>
+                </Pressable>
+
+                <View style={styles.pageInfo}>
+                  <View style={styles.pageInfoRow}>
+                    <Text style={styles.pageText}>
+                      Página <Text style={styles.pageCurrent}>{page}</Text> de {totalPages}
+                    </Text>
+                    {isFetching && !isLoading && (
+                      <ActivityIndicator size="small" color={colors.accent} style={styles.pageSpinner} />
+                    )}
+                  </View>
+                  <Text style={styles.pageSubText}>
+                    {total} produtos no total
+                  </Text>
+                </View>
+
+                <Pressable
+                  style={[styles.pageBtn, page >= totalPages && styles.pageBtnDisabled]}
+                  disabled={page >= totalPages || isFetching}
+                  onPress={() => handlePageChange(page + 1)}
+                >
+                  <Text style={[styles.pageBtnText, page >= totalPages && styles.pageBtnTextDisabled]}>
+                    Próxima
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={page >= totalPages ? colors.gray : colors.primary}
+                  />
+                </Pressable>
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <Pressable
               style={styles.card}
@@ -195,4 +304,71 @@ const styles = StyleSheet.create({
   addButton: { backgroundColor: colors.accent, borderRadius: 999, paddingVertical: 8, alignItems: 'center' },
   addButtonText: { color: colors.white, fontWeight: '700', fontSize: 13 },
   empty: { textAlign: 'center', color: colors.gray, marginTop: 40 },
+  pagination: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.grayLight,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  pageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.white,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  pageBtnDisabled: {
+    opacity: 0.4,
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  pageBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  pageBtnTextDisabled: {
+    color: colors.gray,
+  },
+  pageInfo: {
+    alignItems: 'center',
+  },
+  pageInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pageText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.black,
+  },
+  pageCurrent: {
+    color: colors.accent,
+    fontWeight: '800',
+  },
+  pageSubText: {
+    fontSize: 11,
+    color: colors.gray,
+    marginTop: 2,
+  },
+  pageSpinner: {
+    marginLeft: 2,
+  },
 });
