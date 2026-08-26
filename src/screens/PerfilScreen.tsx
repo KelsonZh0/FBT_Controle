@@ -4,6 +4,7 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSession } from '@/session/session';
+import { useFavorites } from '@/context/favorites';
 import { Button, Loading } from '@/components/ui';
 import type { RootStackParamList, TabParamList } from '@/navigation';
 import { colors } from '@/theme/colors';
@@ -15,6 +16,7 @@ type Props = CompositeScreenProps<
 
 export function PerfilScreen({ navigation }: Props) {
   const { isAuthenticated, customer, logout, isLoading } = useSession();
+  const { favoriteCount } = useFavorites();
 
   if (isLoading) {
     return <Loading label="Carregando perfil…" />;
@@ -29,6 +31,12 @@ export function PerfilScreen({ navigation }: Props) {
           <Button label="Entrar" onPress={() => navigation.navigate('Login')} />
           <Button label="Criar conta" variant="ghost" onPress={() => navigation.navigate('Cadastro')} />
         </View>
+        <Text
+          style={[styles.menuItem, { marginTop: 16, width: '100%', textAlign: 'center' }]}
+          onPress={() => navigation.navigate('Favorites')}
+        >
+          Meus favoritos {favoriteCount > 0 ? `(${favoriteCount})` : ''}
+        </Text>
       </View>
     );
   }
@@ -47,6 +55,9 @@ export function PerfilScreen({ navigation }: Props) {
         </Text>
         <Text style={styles.menuItem} onPress={() => navigation.navigate('Cart')}>
           Carrinho
+        </Text>
+        <Text style={styles.menuItem} onPress={() => navigation.navigate('Favorites')}>
+          Meus favoritos {favoriteCount > 0 ? `(${favoriteCount})` : ''}
         </Text>
       </View>
 

@@ -22,6 +22,7 @@ import type { ApiError, ProductSummary } from '@/types/api';
 import { useProducts } from '@/hooks/useProducts';
 import { useBrands } from '@/hooks/useBrands';
 import { useQuickAddToCart } from '@/hooks/useQuickAddToCart';
+import { useFavorites } from '@/context/favorites';
 import { colors } from '@/theme/colors';
 
 const PAGE_SIZE = 6;
@@ -55,6 +56,7 @@ export function ProductsScreen({ navigation, route }: Props) {
 
   const { data: brands } = useBrands();
   const quickAdd = useQuickAddToCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const products: ProductSummary[] = Array.isArray(data?.data)
     ? data.data
@@ -217,6 +219,22 @@ export function ProductsScreen({ navigation, route }: Props) {
                     <Text style={styles.tagText}>{item.brand}</Text>
                   </View>
                 )}
+
+                {/* Botão de Favoritar no card */}
+                <Pressable
+                  style={styles.favBadge}
+                  hitSlop={8}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(item);
+                  }}
+                >
+                  <Ionicons
+                    name={isFavorite(item.id) ? 'heart' : 'heart-outline'}
+                    size={18}
+                    color={isFavorite(item.id) ? colors.danger : colors.gray}
+                  />
+                </Pressable>
               </View>
               <View style={styles.cardBody}>
                 <Text style={styles.name} numberOfLines={2}>
@@ -370,5 +388,21 @@ const styles = StyleSheet.create({
   },
   pageSpinner: {
     marginLeft: 2,
+  },
+  favBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });

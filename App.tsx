@@ -19,10 +19,14 @@ import { CadastroScreen } from '@/screens/CadastroScreen';
 import { ForgotPasswordScreen } from '@/screens/ForgotPasswordScreen';
 import { ResetPasswordScreen } from '@/screens/ResetPasswordScreen';
 import { CartHeaderButton } from '@/components/CartHeaderButton';
+import { FavoritesHeaderButton } from '@/components/FavoritesHeaderButton';
+import { FavoritesScreen } from '@/screens/FavoritesScreen';
 import type { RootStackParamList, TabParamList } from '@/navigation';
 import { queryClient } from '@/lib/queryClient';
 import { SessionProvider } from '@/session/session';
+import { FavoritesProvider } from '@/context/favorites';
 import { colors } from '@/theme/colors';
+import { View } from 'react-native';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,7 +58,12 @@ function Tabs() {
         options={{
           title: 'FBT Controle Remoto',
           tabBarLabel: 'Home',
-          headerRight: () => <CartHeaderButton />,
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <FavoritesHeaderButton />
+              <CartHeaderButton />
+            </View>
+          ),
         }}
       />
       <Tab.Screen
@@ -81,38 +90,45 @@ export default function App() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <SessionProvider>
-          <NavigationContainer>
-            <Stack.Navigator
-              screenOptions={{
-                headerStyle: { backgroundColor: colors.primary },
-                headerTintColor: colors.white,
-                headerTitleStyle: { fontWeight: '700' },
-              }}
-            >
-              <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
-              <Stack.Screen
-                name="ProductDetail"
-                component={ProductDetailScreen}
-                options={({ route }) => ({ title: route.params.name })}
-              />
-              <Stack.Screen name="Cart" component={CartScreen} options={{ title: 'Carrinho' }} />
-              <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Finalizar pedido' }} />
-              <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: 'Pedido' }} />
-              <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Entrar' }} />
-              <Stack.Screen name="Cadastro" component={CadastroScreen} options={{ title: 'Criar conta' }} />
-              <Stack.Screen
-                name="ForgotPassword"
-                component={ForgotPasswordScreen}
-                options={{ title: 'Esqueci minha senha' }}
-              />
-              <Stack.Screen
-                name="ResetPassword"
-                component={ResetPasswordScreen}
-                options={{ title: 'Nova senha' }}
-              />
-            </Stack.Navigator>
-          </NavigationContainer>
-          <StatusBar style="light" />
+          <FavoritesProvider>
+            <NavigationContainer>
+              <Stack.Navigator
+                screenOptions={{
+                  headerStyle: { backgroundColor: colors.primary },
+                  headerTintColor: colors.white,
+                  headerTitleStyle: { fontWeight: '700' },
+                }}
+              >
+                <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="ProductDetail"
+                  component={ProductDetailScreen}
+                  options={({ route }) => ({ title: route.params.name })}
+                />
+                <Stack.Screen name="Cart" component={CartScreen} options={{ title: 'Carrinho' }} />
+                <Stack.Screen
+                  name="Favorites"
+                  component={FavoritesScreen}
+                  options={{ title: 'Meus Favoritos' }}
+                />
+                <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Finalizar pedido' }} />
+                <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: 'Pedido' }} />
+                <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Entrar' }} />
+                <Stack.Screen name="Cadastro" component={CadastroScreen} options={{ title: 'Criar conta' }} />
+                <Stack.Screen
+                  name="ForgotPassword"
+                  component={ForgotPasswordScreen}
+                  options={{ title: 'Esqueci minha senha' }}
+                />
+                <Stack.Screen
+                  name="ResetPassword"
+                  component={ResetPasswordScreen}
+                  options={{ title: 'Nova senha' }}
+                />
+              </Stack.Navigator>
+            </NavigationContainer>
+            <StatusBar style="light" />
+          </FavoritesProvider>
         </SessionProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

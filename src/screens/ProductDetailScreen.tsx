@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useLayoutEffect, useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useProduct } from '@/hooks/useProduct';
 import { useCartMutations } from '@/hooks/useCartMutations';
 import { useSession } from '@/session/session';
+import { useFavorites } from '@/context/favorites';
 import { money } from '@/lib/format';
 import { Button, ErrorState, Loading } from '@/components/ui';
 import type { RootStackParamList } from '@/navigation';
-import type { ApiError, ProductVariant } from '@/types/api';
+import type { ApiError, ProductSummary, ProductVariant } from '@/types/api';
+import { colors } from '@/theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetail'>;
 
@@ -16,6 +19,7 @@ export function ProductDetailScreen({ route, navigation }: Props) {
   const { data: product, isLoading, isError, error, refetch } = useProduct(id);
   const { isAuthenticated } = useSession();
   const { addItem } = useCartMutations();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const [variantId, setVariantId] = useState<string | null>(null);
 
@@ -27,6 +31,51 @@ export function ProductDetailScreen({ route, navigation }: Props) {
       product.variants[0]
     );
   }, [product, variantId]);
+
+  const productSummary: ProductSummary | undefined = useMemo(() => {
+    if (!product) return undefined;
+    const prices = product.variants.map((v) => v.price).filter((p) => typeof p === 'number');
+    const priceFrom = prices.length ? Math.min(...prices) : 0;
+    const priceTo = prices.length ? Math.max(...prices) : 0;
+    const stock = product.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+    const primaryImg = product.images.find((img) => img.isPrimary)?.url ?? product.images[0]?.url ?? null;
+
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      type: product.type,
+      state: product.state,
+      brand: product.brand?.name ?? null,
+      categoryId: product.category?.id ?? null,
+      priceFrom,
+      priceTo,
+      stock,
+      image: primaryImg,
+      variantsCount: product.variants.length,
+    };
+  }, [product]);
+
+  useLayoutEffect(() => {
+    if (!productSummary) return;
+    const favorited = isFavorite(productSummary.id);
+
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => toggleFavorite(productSummary)}
+          hitSlop={10}
+          style={{ marginRight: 8, padding: 4 }}
+        >
+          <Ionicons
+            name={favorited ? 'heart' : 'heart-outline'}
+            size={24}
+            color={favorited ? '#ff6b81' : colors.white}
+          />
+        </Pressable>
+      ),
+    });
+  }, [navigation, productSummary, isFavorite, toggleFavorite]);
 
   if (isLoading) return <Loading label="Carregando produto…" />;
   if (isError || !product) {
@@ -50,7 +99,22 @@ export function ProductDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {product.images[0] && <Image source={{ uri: product.images[0].url }} style={styles.hero} />}
+      <View>
+        {product.images[0] && <Image source={{ uri: product.images[0].url }} style={styles.hero} />}
+        {productSummary && (
+          <Pressable
+            style={styles.heroFavBadge}
+            hitSlop={8}
+            onPress={() => toggleFavorite(productSummary)}
+          >
+            <Ionicons
+              name={isFavorite(productSummary.id) ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isFavorite(productSummary.id) ? colors.danger : colors.gray}
+            />
+          </Pressable>
+        )}
+      </View>
       <Text style={styles.name}>{product.name}</Text>
       {selected && <Text style={styles.price}>{money(selected.price)}</Text>}
       {product.description && <Text style={styles.desc}>{product.description}</Text>}
@@ -113,4 +177,20 @@ const styles = StyleSheet.create({
   chipDisabled: { opacity: 0.4 },
   stock: { fontSize: 13, color: '#6b7280' },
   loginHint: { fontSize: 13, color: '#b45309' },
+  heroFavBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
 });
