@@ -4,7 +4,7 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSession } from '@/session/session';
-import { Button } from '@/components/ui';
+import { Button, Loading } from '@/components/ui';
 import type { RootStackParamList, TabParamList } from '@/navigation';
 import { colors } from '@/theme/colors';
 
@@ -14,7 +14,11 @@ type Props = CompositeScreenProps<
 >;
 
 export function PerfilScreen({ navigation }: Props) {
-  const { isAuthenticated, customer, logout } = useSession();
+  const { isAuthenticated, customer, logout, isLoading } = useSession();
+
+  if (isLoading) {
+    return <Loading label="Carregando perfil…" />;
+  }
 
   if (!isAuthenticated) {
     return (

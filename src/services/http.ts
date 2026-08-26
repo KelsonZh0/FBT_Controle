@@ -13,9 +13,14 @@ export const http = axios.create({
 });
 
 let customerToken: string | null = null;
+let onUnauthorizedCallback: (() => void) | null = null;
 
 export function setCustomerToken(token: string | null) {
   customerToken = token;
+}
+
+export function setOnUnauthorized(callback: (() => void) | null) {
+  onUnauthorizedCallback = callback;
 }
 
 http.interceptors.request.use((config) => {
@@ -35,6 +40,10 @@ http.interceptors.response.use(
   (error: AxiosError<{ error?: { code?: string; message?: string } }>) => {
     const status = error.response?.status ?? 0;
     const payload = error.response?.data?.error;
+
+    if (status === 401 && onUnauthorizedCallback) {
+      onUnauthorizedCallback();
+    }
 
     if (payload) {
       return Promise.reject(new ApiError(payload.code ?? 'ERROR', payload.message ?? 'Erro na API', status));

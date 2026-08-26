@@ -12,9 +12,13 @@ import { colors } from '@/theme/colors';
 type Props = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 
 export function CartScreen({ navigation }: Props) {
-  const { isAuthenticated, customer, logout } = useSession();
+  const { isAuthenticated, customer, logout, isLoading: isSessionLoading } = useSession();
   const { data: cart, isLoading, isError, error, refetch } = useCart();
   const { setQuantity, removeItem } = useCartMutations();
+
+  if (isSessionLoading) {
+    return <Loading label="Carregando sessão…" />;
+  }
 
   if (!isAuthenticated) {
     return (
