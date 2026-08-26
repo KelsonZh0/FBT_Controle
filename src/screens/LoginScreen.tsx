@@ -75,11 +75,13 @@ export function LoginScreen({ navigation }: Props) {
           disabled={isPending || !canSubmit}
         />
 
-        <Button
-          label="Esqueci minha senha"
-          onPress={handleForgotPassword}
-          variant="ghost"
-        />
+        <View style={{ marginTop: 12 }}>
+          <Button
+            label="Esqueci minha senha"
+            onPress={handleForgotPassword}
+            variant="ghost"
+          />
+        </View>
 
         <Text style={styles.link} onPress={() => navigation.navigate('Cadastro')}>
           Não tem conta? Cadastre-se
