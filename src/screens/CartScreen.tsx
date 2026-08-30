@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCart } from '@/hooks/useCart';
@@ -15,6 +16,19 @@ export function CartScreen({ navigation }: Props) {
   const { isAuthenticated, customer, isLoading: isSessionLoading } = useSession();
   const { data: cart, isLoading, isError, error, refetch } = useCart();
   const { setQuantity, removeItem } = useCartMutations();
+  const [itemError, setItemError] = useState<{ variantId: string; message: string } | null>(null);
+
+  function changeQuantity(variantId: string, quantity: number) {
+    setItemError(null);
+    setQuantity.mutate(
+      { variantId, quantity },
+      {
+        onError: (err) => {
+          setItemError({ variantId, message: (err as ApiError).message });
+        },
+      },
+    );
+  }
 
   if (isSessionLoading) {
     return <Loading label="Carregando sessão…" />;
@@ -60,42 +74,45 @@ export function CartScreen({ navigation }: Props) {
         contentContainerStyle={styles.list}
         ListHeaderComponent={<Text style={styles.hi}>Olá, {customer?.name}</Text>}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <View style={styles.info}>
-              <Text style={styles.name} numberOfLines={2}>
-                {item.name}
-              </Text>
-              <Text style={styles.sub}>
-                {money(item.unitPrice)} · subtotal {money(item.subtotal)}
+          <View>
+            <View style={styles.row}>
+              <View style={styles.info}>
+                <Text style={styles.name} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <Text style={styles.sub}>
+                  {money(item.unitPrice)} · subtotal {money(item.subtotal)}
+                </Text>
+              </View>
+              <View style={styles.qtyBox}>
+                <Text
+                  style={[styles.qtyBtn, setQuantity.isPending && styles.dim]}
+                  onPress={() =>
+                    !setQuantity.isPending && changeQuantity(item.variantId, item.quantity - 1)
+                  }
+                >
+                  −
+                </Text>
+                <Text style={styles.qty}>{item.quantity}</Text>
+                <Text
+                  style={[styles.qtyBtn, setQuantity.isPending && styles.dim]}
+                  onPress={() =>
+                    !setQuantity.isPending && changeQuantity(item.variantId, item.quantity + 1)
+                  }
+                >
+                  +
+                </Text>
+              </View>
+              <Text
+                style={[styles.remove, removeItem.isPending && styles.dim]}
+                onPress={() => !removeItem.isPending && removeItem.mutate(item.variantId)}
+              >
+                remover
               </Text>
             </View>
-            <View style={styles.qtyBox}>
-              <Text
-                style={[styles.qtyBtn, setQuantity.isPending && styles.dim]}
-                onPress={() =>
-                  !setQuantity.isPending &&
-                  setQuantity.mutate({ variantId: item.variantId, quantity: item.quantity - 1 })
-                }
-              >
-                −
-              </Text>
-              <Text style={styles.qty}>{item.quantity}</Text>
-              <Text
-                style={[styles.qtyBtn, setQuantity.isPending && styles.dim]}
-                onPress={() =>
-                  !setQuantity.isPending &&
-                  setQuantity.mutate({ variantId: item.variantId, quantity: item.quantity + 1 })
-                }
-              >
-                +
-              </Text>
-            </View>
-            <Text
-              style={[styles.remove, removeItem.isPending && styles.dim]}
-              onPress={() => !removeItem.isPending && removeItem.mutate(item.variantId)}
-            >
-              remover
-            </Text>
+            {itemError?.variantId === item.variantId && (
+              <Text style={styles.itemError}>{itemError.message}</Text>
+            )}
           </View>
         )}
         ListFooterComponent={
@@ -133,6 +150,7 @@ const styles = StyleSheet.create({
   qtyBtn: { fontSize: 20, fontWeight: '700', color: colors.black, paddingHorizontal: 6 },
   qty: { fontSize: 15, fontWeight: '700', minWidth: 20, textAlign: 'center', color: colors.black },
   remove: { fontSize: 12, color: colors.danger, marginLeft: 6 },
+  itemError: { fontSize: 12, color: colors.danger, marginTop: 4, marginLeft: 4 },
   dim: { opacity: 0.4 },
   footer: { marginTop: 16, gap: 10 },
   total: { fontSize: 18, fontWeight: '800', color: colors.black, textAlign: 'right' },

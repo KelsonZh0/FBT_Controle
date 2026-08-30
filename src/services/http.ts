@@ -24,8 +24,6 @@ export function setOnUnauthorized(callback: (() => void) | null) {
 }
 
 http.interceptors.request.use((config) => {
-  console.log("Estou puxando do back....");
-
   if (customerToken) {
     config.headers.set('Authorization', `Bearer ${customerToken}`);
   } else {

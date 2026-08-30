@@ -1,19 +1,27 @@
 {
   "expo": {
-    "name": "Loja da Turma",
-    "slug": "loja-turma-app",
+    "name": "FBT Controle",
+    "slug": "fbt-controle",
     "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0B192C"
     },
     "ios": { "supportsTablet": true },
     "android": {
-      "adaptiveIcon": { "backgroundColor": "#ffffff" }
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B192C"
+      }
     },
-    "web": { "bundler": "metro" }
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    }
   }
 }

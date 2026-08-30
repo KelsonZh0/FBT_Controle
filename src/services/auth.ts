@@ -1,6 +1,6 @@
 import { http } from './http';
 import { ApiError } from '@/types/api';
-import type { AuthResponse } from '@/types/api';
+import type { AuthResponse, Customer } from '@/types/api';
 
 interface OutboxItem {
   to?: string | string[];
@@ -82,6 +82,11 @@ async function resolveResetCode(email: string): Promise<string> {
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const { data } = await http.post<AuthResponse>('/auth/login', { email, password });
+  return data;
+}
+
+export async function getMe(): Promise<Customer> {
+  const { data } = await http.get<Customer>('/auth/me');
   return data;
 }
 

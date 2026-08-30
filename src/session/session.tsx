@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { setCustomerToken, setOnUnauthorized } from '@/services/http';
+import { getMe } from '@/services/auth';
 import type { AuthResponse, Customer } from '@/types/api';
 import { clearAuthSession, getAuthSession, saveAuthSession } from '@/lib/secureStorage';
 import { queryClient } from '@/lib/queryClient';
@@ -35,15 +36,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await saveAuthSession(auth.token, auth.customer);
   }, []);
 
-  // Restaura o token persistido no hardware via expo-secure-store
+  // Restaura o token persistido no hardware via expo-secure-store,
+  // e confirma no backend (GET /auth/me) que ele ainda é válido antes de reabrir a sessão.
   useEffect(() => {
     async function restoreSession() {
       try {
         const session = await getAuthSession();
         if (session.token && session.customer) {
-          setToken(session.token);
-          setCustomer(session.customer);
-          setCustomerToken(session.token);
+          setCustomerToken(session.token); // precisa ir antes do getMe, senão a request sai sem Authorization
+
+          try {
+            const freshCustomer = await getMe();
+            setToken(session.token);
+            setCustomer(freshCustomer);
+          } catch (err) {
+            // Token salvo expirou/foi revogado no servidor — descarta a sessão local
+            setCustomerToken(null);
+            await clearAuthSession();
+          }
         }
       } catch (err) {
         console.error('Erro ao restaurar sessão segura:', err);
