@@ -44,6 +44,17 @@ export interface ProductVariant {
   images: ProductImage[];
 }
 
+/**
+ * Média e contagem já vêm com o produto (RF-35). Nunca calcular isso no app a
+ * partir da lista de avaliações: a lista é paginada, então a conta sairia
+ * errada, e ainda custaria uma requisição por produto.
+ */
+export interface ProductRating {
+  average: number;
+  count: number;
+  distribution: Record<'1' | '2' | '3' | '4' | '5', number>;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -57,6 +68,7 @@ export interface Product {
   options: { id: string; name: string; values: { id: string; value: string }[] }[];
   variants: ProductVariant[];
   images: ProductImage[];
+  rating: ProductRating;
   createdAt: string;
 }
 
@@ -129,6 +141,8 @@ export interface Order {
   total: number;
   items: OrderItem[];
   payment: Payment | null;
+  /** O ponto de retirada escolhido no checkout, ou `null` para entrega (RF-47). */
+  pickup: OrderPickup | null;
   createdAt: string;
 }
 
@@ -137,3 +151,116 @@ export interface OrderTimelineEntry {
   createdAt: string;
   note?: string | null;
 }
+
+// ----------------------------------------------------------------------------
+// Avaliações (RF-35 a RF-42)
+// ----------------------------------------------------------------------------
+
+export interface ReviewImage {
+  id: string;
+  url: string;
+  mediaId: string;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  title: string | null;
+  comment: string | null;
+  images: ReviewImage[];
+  author: { id: string; name: string };
+  verifiedPurchase: boolean;
+  /** A loja pode ocultar uma avaliação pelo painel (RF-42). */
+  hidden: boolean;
+  /** Só vem `true` quando a listagem é feita com o token do cliente. */
+  isMine: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewsPage extends Paginated<Review> {
+  summary: ProductRating;
+}
+
+/**
+ * Motivos que a API devolve. `NOT_PURCHASED` cobre tanto quem nunca comprou
+ * quanto quem comprou e não pagou — o pedido precisa estar PAID.
+ * O `| (string & {})` mantém a união aberta: se o backend passar a devolver um
+ * motivo novo, o código continua compilando e cai no texto genérico.
+ */
+export type CanReviewReason = 'NOT_PURCHASED' | 'ALREADY_REVIEWED' | (string & {});
+
+export interface CanReviewResponse {
+  canReview: boolean;
+  reason: CanReviewReason | null;
+  /** Texto pronto da API. Usado só como último recurso (ver RF-37). */
+  message: string;
+  /** Preenchido quando o motivo é `ALREADY_REVIEWED`. */
+  reviewId: string | null;
+}
+
+export interface CreateReviewInput {
+  rating: number;
+  title?: string;
+  comment?: string;
+  /** Ids obtidos em POST /uploads. Máximo de 5. */
+  mediaIds?: string[];
+}
+
+/**
+ * Resposta do POST /uploads. Atenção: o campo é `id`, não `mediaId`, apesar de
+ * o enunciado chamá-lo assim. Ler `mediaId` aqui devolve `undefined` e a
+ * avaliação é criada sem foto, sem nenhum erro visível.
+ */
+export interface UploadedMedia {
+  id: string;
+  kind: 'IMAGE' | 'VIDEO';
+  url: string;
+  mimeType: string;
+  sizeBytes: number;
+  originalName: string;
+  folder: string | null;
+  createdAt: string;
+}
+
+// ----------------------------------------------------------------------------
+// Retirada (RF-43 a RF-48)
+// ----------------------------------------------------------------------------
+
+export interface PickupAddress {
+  cep: string | null;
+  street: string | null;
+  number: string | null;
+  complement?: string | null;
+  district: string | null;
+  city: string | null;
+  state: string | null;
+}
+
+export interface Coordinate {
+  latitude: number;
+  longitude: number;
+}
+
+export interface PickupPoint {
+  id: string;
+  name: string;
+  address: PickupAddress;
+  coordinate: Coordinate;
+  hours: string | null;
+  active: boolean;
+  /**
+   * Só existe quando a busca envia latitude e longitude. Ser opcional é de
+   * propósito: obriga toda tela a tratar o caso "sem posição" (RF-45).
+   */
+  distanceKm?: number;
+}
+
+export interface PickupPointsResponse {
+  data: PickupPoint[];
+  /** `null` quando a busca foi feita sem coordenadas. */
+  origin: Coordinate | null;
+}
+
+/** O ponto escolhido, como volta dentro do pedido (RF-47). */
+export type OrderPickup = Pick<PickupPoint, 'id' | 'name' | 'address' | 'coordinate' | 'hours'>;

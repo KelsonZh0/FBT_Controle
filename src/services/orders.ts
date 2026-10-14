@@ -1,8 +1,13 @@
 import { http } from './http';
 import type { Order, OrderTimelineEntry, PaymentMethod, PaymentSimulate } from '@/types/api';
 
-export async function checkout(): Promise<Order> {
-  const { data } = await http.post<Order>('/orders/checkout');
+/**
+ * Fecha o pedido. Passando `pickupPointId`, o pedido é de retirada no ponto
+ * escolhido e volta com esse ponto em `order.pickup` (RF-47); sem ele, segue
+ * como entrega.
+ */
+export async function checkout(pickupPointId?: string): Promise<Order> {
+  const { data } = await http.post<Order>('/orders/checkout', pickupPointId ? { pickupPointId } : {});
   return data;
 }
 

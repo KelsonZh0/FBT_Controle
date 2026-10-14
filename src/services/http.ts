@@ -2,11 +2,19 @@ import axios, { AxiosError } from 'axios';
 import { env } from '@/env';
 import { ApiError } from '@/types/api';
 
+/**
+ * Repare que `Content-Type` NÃO é fixado aqui de propósito.
+ *
+ * O axios já põe `application/json` sozinho quando o corpo é um objeto, e
+ * quando o corpo é um FormData ele deixa o React Native definir o header — que
+ * é o único jeito de o boundary do multipart ser gerado. Fixar o Content-Type
+ * no cliente vaza para o POST /uploads e quebra o envio da foto sem mensagem
+ * de erro clara (RF-39).
+ */
 export const http = axios.create({
   baseURL: `${env.apiUrl}/v1`,
   timeout: 15000,
   headers: {
-    'Content-Type': 'application/json',
     'X-API-Key': env.apiKey,
     'X-Student-RM': env.studentRm,
   },
