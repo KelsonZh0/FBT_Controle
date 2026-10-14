@@ -3,7 +3,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -18,7 +17,6 @@ import type { NotificationResponse } from 'expo-notifications/build/Notification
 import { listPushMessages } from '@/services/push';
 import { navigationRef } from '@/navigation';
 import {
-  ensureAndroidChannel,
   getLastSeenAt,
   getNotificationPermission,
   getOptIn,
@@ -43,13 +41,13 @@ interface NotificationsContextValue {
 
 const NotificationsContext = createContext<NotificationsContextValue | undefined>(undefined);
 
+/** Quanto esperar entre tentativas de navegar na abertura a frio. */
+const NAVIGATION_RETRY_MS = 250;
+const MAX_NAVIGATION_ATTEMPTS = 20;
+
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [permission, setPermission] = useState<NotificationPermission>('unknown');
   const [optIn, setOptInState] = useState(false);
-
-  // Guarda o produto que veio num toque antes de a navegação existir (abertura
-  // a frio): o app abre, a pilha monta, e só então conseguimos navegar.
-  const pendingProductId = useRef<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -58,13 +56,29 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  /**
+   * Navega para o produto, esperando a navegação existir se preciso.
+   *
+   * Na abertura a frio, o toque é lido antes de a pilha de navegação montar.
+   * Por isso a tentativa se repete por alguns segundos em vez de desistir na
+   * primeira — e desiste de vez depois disso, para não ficar um timer vivo à toa.
+   */
   const navigateToProduct = useCallback((productId: string) => {
-    if (navigationRef.isReady()) {
+    function tryNavigate(): boolean {
+      if (!navigationRef.isReady()) return false;
       navigationRef.navigate('ProductDetail', { id: productId });
-      pendingProductId.current = null;
-      return;
+      return true;
     }
-    pendingProductId.current = productId;
+
+    if (tryNavigate()) return;
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      if (tryNavigate() || attempts >= MAX_NAVIGATION_ATTEMPTS) {
+        clearInterval(timer);
+      }
+    }, NAVIGATION_RETRY_MS);
   }, []);
 
   // Deep link (RF-59): o toque abre a tela do produto que veio no `data`.
@@ -83,20 +97,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.remove();
   }, [navigateToProduct]);
-
-  // Escoa o deep link represado assim que a navegação ficar pronta.
-  useEffect(() => {
-    if (!pendingProductId.current) return;
-    const timer = setInterval(() => {
-      const productId = pendingProductId.current;
-      if (productId && navigationRef.isReady()) {
-        navigationRef.navigate('ProductDetail', { id: productId });
-        pendingProductId.current = null;
-        clearInterval(timer);
-      }
-    }, 300);
-    return () => clearInterval(timer);
-  });
 
   /**
    * Lê o histórico da loja e apresenta o que ainda não foi mostrado (RF-58,
@@ -137,11 +137,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     const result = await requestNotificationPermission();
     setPermission(result);
 
-    if (result === 'granted') {
-      await ensureAndroidChannel();
-      await setOptIn(true);
-      setOptInState(true);
-    }
+    if (result !== 'granted') return;
+
+    // O canal já é criado dentro de `requestNotificationPermission`, e falhar
+    // ali não impede nada: as notificações continuam chegando pelo canal padrão.
+    await setOptIn(true);
+    setOptInState(true);
   }, []);
 
   const disable = useCallback(async () => {

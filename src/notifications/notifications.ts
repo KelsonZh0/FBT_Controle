@@ -83,16 +83,44 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   return permission;
 }
 
-/** Cria o canal do Android. Idempotente: chamar de novo só atualiza. */
-export async function ensureAndroidChannel(): Promise<void> {
-  if (Platform.OS !== 'android') return;
+/**
+ * Guarda se o canal existe de fato. Começa `false` e só vira `true` se o
+ * sistema aceitar criá-lo — ver `ensureAndroidChannel`.
+ */
+let androidChannelReady = false;
 
-  await setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
-    name: 'Avisos da loja',
-    description: 'Promoções e novidades dos produtos que você acompanha.',
-    importance: AndroidImportance.DEFAULT,
-    sound: 'default',
-  });
+/**
+ * Cria o canal do Android (RF-58). Idempotente: chamar de novo só atualiza.
+ *
+ * Pode falhar e isso é esperado: no Expo Go o módulo nativo de canais não
+ * existe (saiu junto com o push remoto no SDK 53) e a chamada é rejeitada com
+ * `NotificationsChannelsProvider` nulo. Num development build ela funciona.
+ *
+ * A falha é engolida de propósito: sem canal, o Android entrega a notificação
+ * no canal padrão do app — ou seja, o aviso continua chegando. Deixar essa
+ * rejeição escapar jogaria um erro na tela e derrubaria a ativação dos avisos
+ * por causa de um detalhe de ambiente.
+ */
+export async function ensureAndroidChannel(): Promise<boolean> {
+  if (Platform.OS !== 'android') return false;
+
+  try {
+    await setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
+      name: 'Avisos da loja',
+      description: 'Promoções e novidades dos produtos que você acompanha.',
+      importance: AndroidImportance.DEFAULT,
+      sound: 'default',
+    });
+    androidChannelReady = true;
+  } catch (error) {
+    androidChannelReady = false;
+    console.warn(
+      '[notificações] Canal do Android não pôde ser criado; usando o canal padrão.',
+      error,
+    );
+  }
+
+  return androidChannelReady;
 }
 
 /**
@@ -107,7 +135,11 @@ export async function presentStoreMessage(message: PushMessage): Promise<void> {
       title: message.title ?? 'Novidade na loja',
       body: message.body ?? 'Toque para ver.',
       data: message.data ?? {},
-      ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
+      // Só aponta para o canal se ele realmente existir: pedir um canal
+      // inexistente faz o Android recusar a notificação inteira.
+      ...(Platform.OS === 'android' && androidChannelReady
+        ? { channelId: ANDROID_CHANNEL_ID }
+        : {}),
     },
     // `null` dispara agora, sem agendamento.
     trigger: null,

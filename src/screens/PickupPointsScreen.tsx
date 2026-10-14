@@ -73,9 +73,7 @@ export function PickupPointsScreen({ route, navigation }: Props) {
       ) : (
         <>
           {/* RF-46: mapa com os pontos e a loja. */}
-          <PickupMap points={points.data.data} store={storeCoordinate} onSelect={
-            selecting ? handleChoose : undefined
-          } />
+          <PickupMap points={points.data.data} store={storeCoordinate} />
 
           {points.data.data.map((point, index) => (
             <AnimatedListItem key={point.id} index={index}>
