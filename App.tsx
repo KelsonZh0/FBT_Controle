@@ -11,6 +11,7 @@ import { CategoriasScreen } from '@/screens/CategoriasScreen';
 import { OrdersScreen } from '@/screens/OrdersScreen';
 import { PerfilScreen } from '@/screens/PerfilScreen';
 import { ProductDetailScreen } from '@/screens/ProductDetailScreen';
+import { ProductReviewsScreen } from '@/screens/ProductReviewsScreen';
 import { CartScreen } from '@/screens/CartScreen';
 import { CheckoutScreen } from '@/screens/CheckoutScreen';
 import { OrderDetailScreen } from '@/screens/OrderDetailScreen';
@@ -104,6 +105,11 @@ export default function App() {
                   name="ProductDetail"
                   component={ProductDetailScreen}
                   options={({ route }) => ({ title: route.params.name })}
+                />
+                <Stack.Screen
+                  name="ProductReviews"
+                  component={ProductReviewsScreen}
+                  options={{ title: 'Avaliações' }}
                 />
                 <Stack.Screen name="Cart" component={CartScreen} options={{ title: 'Carrinho' }} />
                 <Stack.Screen

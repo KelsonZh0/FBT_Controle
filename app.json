@@ -22,6 +22,14 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O FBT Controle usa suas fotos para você anexar imagens às avaliações de produtos."
+        }
+      ]
+    ]
   }
 }

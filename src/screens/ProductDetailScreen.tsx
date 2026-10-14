@@ -9,6 +9,7 @@ import { useFavorites } from '@/context/favorites';
 import { money } from '@/lib/format';
 import { Button, ErrorState, Loading } from '@/components/ui';
 import { FavoriteHeart } from '@/components/motion';
+import { StarsDisplay } from '@/components/Stars';
 import type { RootStackParamList } from '@/navigation';
 import type { ApiError, ProductSummary, ProductVariant } from '@/types/api';
 import { colors } from '@/theme/colors';
@@ -113,6 +114,25 @@ export function ProductDetailScreen({ route, navigation }: Props) {
       </View>
       <Text style={styles.name}>{product.name}</Text>
       {selected && <Text style={styles.price}>{money(selected.price)}</Text>}
+
+      {/* RF-35: a média e a contagem vêm dentro do próprio produto. Nenhuma
+          requisição extra aqui, e nenhuma conta feita em cima da lista. */}
+      <Pressable
+        style={styles.ratingRow}
+        onPress={() =>
+          navigation.navigate('ProductReviews', { productId: product.id, productName: product.name })
+        }
+      >
+        <StarsDisplay value={product.rating.average} />
+        <Text style={styles.ratingText}>
+          {product.rating.count > 0
+            ? `${product.rating.average.toFixed(1)} · ${product.rating.count} ${
+                product.rating.count === 1 ? 'avaliação' : 'avaliações'
+              }`
+            : 'Sem avaliações ainda'}
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.gray} />
+      </Pressable>
       {product.description && <Text style={styles.desc}>{product.description}</Text>}
 
       {/* Produto VARIABLE: deixa escolher a variante. SIMPLE já usa a única. */}
@@ -171,6 +191,16 @@ const styles = StyleSheet.create({
   },
   chipActive: { borderColor: '#111827', backgroundColor: '#111827', color: '#fff' },
   chipDisabled: { opacity: 0.4 },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  ratingText: { flex: 1, fontSize: 13, color: colors.gray, fontWeight: '600' },
   stock: { fontSize: 13, color: '#6b7280' },
   loginHint: { fontSize: 13, color: '#b45309' },
   heroFavBadge: {
