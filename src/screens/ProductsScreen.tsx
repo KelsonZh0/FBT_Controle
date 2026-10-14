@@ -17,6 +17,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { money } from '@/lib/format';
 import { ErrorState, Loading } from '@/components/ui';
+import { AnimatedListItem, FavoriteHeart } from '@/components/motion';
 import type { RootStackParamList, TabParamList } from '@/navigation';
 import type { ApiError, ProductSummary } from '@/types/api';
 import { useProducts } from '@/hooks/useProducts';
@@ -203,7 +204,8 @@ export function ProductsScreen({ navigation, route }: Props) {
               </View>
             ) : null
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
+            <AnimatedListItem index={index} style={styles.cardWrapper}>
             <Pressable
               style={styles.card}
               onPress={() => navigation.navigate('ProductDetail', { id: item.id, name: item.name })}
@@ -220,21 +222,12 @@ export function ProductsScreen({ navigation, route }: Props) {
                   </View>
                 )}
 
-                {/* Botão de Favoritar no card */}
-                <Pressable
+                {/* Favoritar não navega: a confirmação é o salto do coração (RF-50). */}
+                <FavoriteHeart
+                  active={isFavorite(item.id)}
+                  onPress={() => toggleFavorite(item)}
                   style={styles.favBadge}
-                  hitSlop={8}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(item);
-                  }}
-                >
-                  <Ionicons
-                    name={isFavorite(item.id) ? 'heart' : 'heart-outline'}
-                    size={18}
-                    color={isFavorite(item.id) ? colors.danger : colors.gray}
-                  />
-                </Pressable>
+                />
               </View>
               <View style={styles.cardBody}>
                 <Text style={styles.name} numberOfLines={2}>
@@ -256,6 +249,7 @@ export function ProductsScreen({ navigation, route }: Props) {
                 </Text>
               </Pressable>
             </Pressable>
+            </AnimatedListItem>
           )}
         />
       )}
@@ -292,8 +286,10 @@ const styles = StyleSheet.create({
   chipActive: { borderColor: colors.accent, backgroundColor: colors.accent, color: colors.white },
   list: { paddingHorizontal: 12, paddingBottom: 24, gap: 12 },
   row: { justifyContent: 'space-between', marginBottom: 4 },
+  // A largura mora no invólucro animado; o card ocupa tudo que ele der.
+  cardWrapper: { width: '48%' },
   card: {
-    width: '48%',
+    width: '100%',
     flexDirection: 'column',
     backgroundColor: colors.grayLight,
     borderRadius: 12,

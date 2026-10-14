@@ -5,6 +5,7 @@ import { useFavorites } from '@/context/favorites';
 import { useQuickAddToCart } from '@/hooks/useQuickAddToCart';
 import { money } from '@/lib/format';
 import { Button, Loading } from '@/components/ui';
+import { AnimatedListItem, FavoriteHeart } from '@/components/motion';
 import type { RootStackParamList } from '@/navigation';
 import type { ProductSummary } from '@/types/api';
 import { colors } from '@/theme/colors';
@@ -62,7 +63,8 @@ export function FavoritesScreen({ navigation }: Props) {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
+          <AnimatedListItem index={index} style={styles.cardWrapper}>
           <Pressable
             style={styles.card}
             onPress={() => navigation.navigate('ProductDetail', { id: item.id, name: item.name })}
@@ -80,17 +82,13 @@ export function FavoritesScreen({ navigation }: Props) {
                 </View>
               )}
 
-              {/* Botão de Desfavoritar no card */}
-              <Pressable
+              {/* Desfavoritar aqui remove o item da lista: ele sai animado e os
+                  vizinhos se acomodam sozinhos pelo `layout` (RF-52). */}
+              <FavoriteHeart
+                active
+                onPress={() => toggleFavorite(item)}
                 style={styles.favBadge}
-                hitSlop={8}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(item);
-                }}
-              >
-                <Ionicons name="heart" size={18} color={colors.danger} />
-              </Pressable>
+              />
             </View>
 
             <View style={styles.cardBody}>
@@ -117,6 +115,7 @@ export function FavoritesScreen({ navigation }: Props) {
               </Text>
             </Pressable>
           </Pressable>
+          </AnimatedListItem>
         )}
       />
     </View>
@@ -148,8 +147,10 @@ const styles = StyleSheet.create({
   listHeader: { paddingVertical: 12 },
   countText: { fontSize: 13, fontWeight: '600', color: colors.gray },
   row: { justifyContent: 'space-between', marginBottom: 4 },
+  // A largura mora no invólucro animado; o card ocupa tudo que ele der.
+  cardWrapper: { width: '48%' },
   card: {
-    width: '48%',
+    width: '100%',
     flexDirection: 'column',
     backgroundColor: colors.grayLight,
     borderRadius: 12,

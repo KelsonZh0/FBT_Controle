@@ -8,6 +8,7 @@ import { useSession } from '@/session/session';
 import { useFavorites } from '@/context/favorites';
 import { money } from '@/lib/format';
 import { Button, ErrorState, Loading } from '@/components/ui';
+import { FavoriteHeart } from '@/components/motion';
 import type { RootStackParamList } from '@/navigation';
 import type { ApiError, ProductSummary, ProductVariant } from '@/types/api';
 import { colors } from '@/theme/colors';
@@ -102,17 +103,12 @@ export function ProductDetailScreen({ route, navigation }: Props) {
       <View>
         {product.images[0] && <Image source={{ uri: product.images[0].url }} style={styles.hero} />}
         {productSummary && (
-          <Pressable
-            style={styles.heroFavBadge}
-            hitSlop={8}
+          <FavoriteHeart
+            active={isFavorite(productSummary.id)}
             onPress={() => toggleFavorite(productSummary)}
-          >
-            <Ionicons
-              name={isFavorite(productSummary.id) ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isFavorite(productSummary.id) ? colors.danger : colors.gray}
-            />
-          </Pressable>
+            size={22}
+            style={styles.heroFavBadge}
+          />
         )}
       </View>
       <Text style={styles.name}>{product.name}</Text>

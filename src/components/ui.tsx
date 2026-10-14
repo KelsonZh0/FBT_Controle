@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { PulsingDots } from '@/components/motion';
 import { colors } from '@/theme/colors';
 import { pressScale, springs, useMotionEnabled } from '@/theme/motion';
 
@@ -7,10 +8,20 @@ export function Center({ children }: { children: React.ReactNode }) {
   return <View style={styles.center}>{children}</View>;
 }
 
+/**
+ * RF-53: carregar dá sinal de vida.
+ *
+ * Com movimento, são os nossos pontos pulsando. Sem movimento, cai no indicador
+ * nativo da plataforma — que continua girando e é o padrão que o sistema já
+ * considera aceitável para quem pediu menos animação. Em nenhum dos dois casos
+ * sobra um texto parado.
+ */
 export function Loading({ label = 'Carregando…' }: { label?: string }) {
+  const motionEnabled = useMotionEnabled();
+
   return (
     <Center>
-      <ActivityIndicator size="large" />
+      {motionEnabled ? <PulsingDots /> : <ActivityIndicator size="large" />}
       <Text style={styles.muted}>{label}</Text>
     </Center>
   );
