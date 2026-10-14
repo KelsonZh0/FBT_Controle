@@ -5,6 +5,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSession } from '@/session/session';
 import { useFavorites } from '@/context/favorites';
+import { useNotifications } from '@/notifications/NotificationsProvider';
 import { Button, Loading } from '@/components/ui';
 import type { RootStackParamList, TabParamList } from '@/navigation';
 import { colors } from '@/theme/colors';
@@ -59,9 +60,79 @@ export function PerfilScreen({ navigation }: Props) {
         <Text style={styles.menuItem} onPress={() => navigation.navigate('Favorites')}>
           Meus favoritos {favoriteCount > 0 ? `(${favoriteCount})` : ''}
         </Text>
+        <Text style={styles.menuItem} onPress={() => navigation.navigate('PickupPoints')}>
+          Pontos de retirada
+        </Text>
       </View>
 
+      <NotificationsCard />
+
       <Button label="Sair" variant="ghost" onPress={logout} />
+    </View>
+  );
+}
+
+/**
+ * Estado dos avisos da loja, dito em voz alta (RF-56 e RF-60).
+ *
+ * A permissão é pedida aqui, num toque explícito — e não na abertura do app,
+ * quando a pessoa ainda não sabe o que ganha aceitando. Negada, a tela explica
+ * o que deixou de acontecer e qual é o caminho de volta; o resto do app segue
+ * inteiro de qualquer jeito.
+ */
+function NotificationsCard() {
+  const { permission, optIn, enable, disable, openSettings } = useNotifications();
+
+  const ligado = permission === 'granted' && optIn;
+
+  return (
+    <View style={styles.notifCard}>
+      <View style={styles.notifHeader}>
+        <Ionicons
+          name={ligado ? 'notifications' : 'notifications-off-outline'}
+          size={18}
+          color={ligado ? colors.accent : colors.gray}
+        />
+        <Text style={styles.notifTitle}>
+          {ligado ? 'Avisos da loja ligados' : 'Avisos da loja desligados'}
+        </Text>
+      </View>
+
+      {ligado && (
+        <>
+          <Text style={styles.notifBody}>
+            Você recebe as novidades da loja quando abre o app. Tocar no aviso leva direto ao
+            produto.
+          </Text>
+          <Button label="Desligar avisos" variant="ghost" onPress={disable} />
+        </>
+      )}
+
+      {!ligado && permission === 'blocked' && (
+        <>
+          <Text style={styles.notifBody}>
+            As notificações estão bloqueadas nas configurações do aparelho, então não dá para
+            ativar por aqui. Todo o resto do app funciona normalmente — você só não recebe avisos
+            de novidades.
+          </Text>
+          <Button label="Abrir configurações" variant="ghost" onPress={openSettings} />
+        </>
+      )}
+
+      {!ligado && permission !== 'blocked' && (
+        <>
+          <Text style={styles.notifBody}>
+            {permission === 'denied'
+              ? 'Você recusou as notificações. Sem elas o app continua inteiro: você só não fica sabendo de promoções dos produtos que acompanha.'
+              : 'Ative para saber quando a loja anunciar novidades e promoções dos produtos que você acompanha.'}
+          </Text>
+          <Button
+            label={permission === 'denied' ? 'Permitir avisos' : 'Ativar avisos'}
+            variant="ghost"
+            onPress={enable}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -83,6 +154,17 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: '700', color: colors.black },
   email: { fontSize: 13, color: colors.gray, marginBottom: 24 },
   menu: { width: '100%', gap: 8, marginBottom: 24 },
+  notifCard: {
+    width: '100%',
+    backgroundColor: colors.grayLight,
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    marginBottom: 20,
+  },
+  notifHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  notifTitle: { fontSize: 14, fontWeight: '700', color: colors.black },
+  notifBody: { fontSize: 12, color: colors.gray, lineHeight: 18 },
   menuItem: {
     fontSize: 14,
     fontWeight: '600',

@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0B192C"
     },
-    "ios": { "supportsTablet": true },
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -29,7 +31,14 @@
         {
           "photosPermission": "O FBT Controle usa suas fotos para você anexar imagens às avaliações de produtos."
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O FBT Controle usa sua localização para ordenar os pontos de retirada do mais perto para o mais longe."
+        }
+      ],
+      "expo-font"
     ]
   }
 }

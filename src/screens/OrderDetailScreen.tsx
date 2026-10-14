@@ -58,6 +58,25 @@ export function OrderDetailScreen({ route }: Props) {
 
       <Text style={styles.total}>Total: {money(order.total)}</Text>
 
+      {/* RF-47: o pedido criado reflete a escolha feita no checkout. */}
+      <View style={styles.box}>
+        <Text style={styles.sectionTitle}>{order.pickup ? 'Retirada' : 'Entrega'}</Text>
+        {order.pickup ? (
+          <>
+            <Text style={styles.pickupName}>{order.pickup.name}</Text>
+            <Text style={styles.hint}>
+              {[order.pickup.address.street, order.pickup.address.number]
+                .filter(Boolean)
+                .join(', ')}
+              {order.pickup.address.district ? ` — ${order.pickup.address.district}` : ''}
+            </Text>
+            {order.pickup.hours && <Text style={styles.hint}>{order.pickup.hours}</Text>}
+          </>
+        ) : (
+          <Text style={styles.hint}>Este pedido será entregue no seu endereço.</Text>
+        )}
+      </View>
+
       {isPending && (
         <View style={styles.box}>
           <Text style={styles.sectionTitle}>Pagamento</Text>
@@ -146,6 +165,7 @@ const styles = StyleSheet.create({
   total: { fontSize: 18, fontWeight: '800', color: colors.black, textAlign: 'right' },
   box: { gap: 10, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: colors.black },
+  pickupName: { fontSize: 14, fontWeight: '600', color: colors.accent },
   hint: { fontSize: 13, color: colors.gray },
   methodRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {

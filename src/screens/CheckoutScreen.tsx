@@ -1,4 +1,5 @@
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCart } from '@/hooks/useCart';
 import { useCheckout } from '@/hooks/useOrderActions';
@@ -10,9 +11,14 @@ import { colors } from '@/theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
-export function CheckoutScreen({ navigation }: Props) {
+export function CheckoutScreen({ navigation, route }: Props) {
   const { data: cart, isLoading, isError, error, refetch } = useCart();
   const checkout = useCheckout();
+
+  // O ponto escolhido chega de volta da tela de retirada pelos parâmetros da
+  // rota. Sem ponto, o pedido segue como entrega — que continua sendo o padrão.
+  const pickupPointId = route.params?.pickupPointId;
+  const pickupPointName = route.params?.pickupPointName;
 
   if (isLoading) return <Loading label="Carregando carrinho…" />;
   if (isError) return <ErrorState message={(error as ApiError).message} onRetry={() => refetch()} />;
@@ -30,7 +36,7 @@ export function CheckoutScreen({ navigation }: Props) {
   }
 
   function handleCheckout() {
-    checkout.mutate(undefined, {
+    checkout.mutate(pickupPointId, {
       onSuccess: (order) => navigation.replace('OrderDetail', { id: order.id }),
     });
   }
@@ -41,7 +47,54 @@ export function CheckoutScreen({ navigation }: Props) {
         data={items}
         keyExtractor={(it) => it.variantId}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={<Text style={styles.heading}>Resumo do pedido</Text>}
+        ListHeaderComponent={
+          <View style={styles.headerBlock}>
+            {/* RF-47: escolher retirada num ponto em vez de receber em casa. */}
+            <View style={styles.pickupCard}>
+              <View style={styles.pickupHeader}>
+                <Ionicons
+                  name={pickupPointId ? 'storefront' : 'home-outline'}
+                  size={18}
+                  color={colors.accent}
+                />
+                <Text style={styles.pickupTitle}>
+                  {pickupPointId ? 'Retirada na loja' : 'Entrega no seu endereço'}
+                </Text>
+              </View>
+
+              {pickupPointId ? (
+                <>
+                  <Text style={styles.pickupName}>{pickupPointName}</Text>
+                  <View style={styles.pickupActions}>
+                    <Button
+                      label="Trocar ponto"
+                      variant="ghost"
+                      onPress={() => navigation.navigate('PickupPoints', { mode: 'select' })}
+                    />
+                    <Button
+                      label="Receber em casa"
+                      variant="ghost"
+                      onPress={() => navigation.setParams({ pickupPointId: undefined, pickupPointName: undefined })}
+                    />
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.pickupHint}>
+                    Prefere buscar? Dá para retirar num dos nossos pontos, sem custo de entrega.
+                  </Text>
+                  <Button
+                    label="Escolher ponto de retirada"
+                    variant="ghost"
+                    onPress={() => navigation.navigate('PickupPoints', { mode: 'select' })}
+                  />
+                </>
+              )}
+            </View>
+
+            <Text style={styles.heading}>Resumo do pedido</Text>
+          </View>
+        }
         renderItem={({ item }) => (
           <View style={styles.row}>
             <View style={styles.info}>
@@ -79,6 +132,13 @@ const styles = StyleSheet.create({
   body: { fontSize: 14, color: colors.gray, textAlign: 'center', lineHeight: 20 },
   list: { padding: 12, gap: 10 },
   heading: { fontSize: 16, fontWeight: '700', color: colors.black, marginBottom: 6 },
+  headerBlock: { gap: 14, marginBottom: 4 },
+  pickupCard: { backgroundColor: colors.grayLight, borderRadius: 12, padding: 12, gap: 8 },
+  pickupHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pickupTitle: { fontSize: 14, fontWeight: '700', color: colors.black },
+  pickupName: { fontSize: 14, fontWeight: '600', color: colors.accent },
+  pickupHint: { fontSize: 12, color: colors.gray, lineHeight: 18 },
+  pickupActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

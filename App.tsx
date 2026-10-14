@@ -12,6 +12,7 @@ import { OrdersScreen } from '@/screens/OrdersScreen';
 import { PerfilScreen } from '@/screens/PerfilScreen';
 import { ProductDetailScreen } from '@/screens/ProductDetailScreen';
 import { ProductReviewsScreen } from '@/screens/ProductReviewsScreen';
+import { PickupPointsScreen } from '@/screens/PickupPointsScreen';
 import { CartScreen } from '@/screens/CartScreen';
 import { CheckoutScreen } from '@/screens/CheckoutScreen';
 import { OrderDetailScreen } from '@/screens/OrderDetailScreen';
@@ -22,7 +23,8 @@ import { ResetPasswordScreen } from '@/screens/ResetPasswordScreen';
 import { CartHeaderButton } from '@/components/CartHeaderButton';
 import { FavoritesHeaderButton } from '@/components/FavoritesHeaderButton';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
-import type { RootStackParamList, TabParamList } from '@/navigation';
+import { navigationRef, type RootStackParamList, type TabParamList } from '@/navigation';
+import { NotificationsProvider } from '@/notifications/NotificationsProvider';
 import { queryClient } from '@/lib/queryClient';
 import { SessionProvider } from '@/session/session';
 import { FavoritesProvider } from '@/context/favorites';
@@ -92,7 +94,8 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <SessionProvider>
           <FavoritesProvider>
-            <NavigationContainer>
+            <NotificationsProvider>
+            <NavigationContainer ref={navigationRef}>
               <Stack.Navigator
                 screenOptions={{
                   headerStyle: { backgroundColor: colors.primary },
@@ -104,7 +107,7 @@ export default function App() {
                 <Stack.Screen
                   name="ProductDetail"
                   component={ProductDetailScreen}
-                  options={({ route }) => ({ title: route.params.name })}
+                  options={({ route }) => ({ title: route.params.name ?? 'Produto' })}
                 />
                 <Stack.Screen
                   name="ProductReviews"
@@ -118,6 +121,11 @@ export default function App() {
                   options={{ title: 'Meus Favoritos' }}
                 />
                 <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Finalizar pedido' }} />
+                <Stack.Screen
+                  name="PickupPoints"
+                  component={PickupPointsScreen}
+                  options={{ title: 'Pontos de retirada' }}
+                />
                 <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: 'Pedido' }} />
                 <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Entrar' }} />
                 <Stack.Screen name="Cadastro" component={CadastroScreen} options={{ title: 'Criar conta' }} />
@@ -133,6 +141,7 @@ export default function App() {
                 />
               </Stack.Navigator>
             </NavigationContainer>
+            </NotificationsProvider>
             <StatusBar style="light" />
           </FavoritesProvider>
         </SessionProvider>
